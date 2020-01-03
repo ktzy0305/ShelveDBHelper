@@ -6,38 +6,40 @@ class DBHelper:
 
     def __init__(self, db_name):
         self.db_name = db_name
-        db = shelve.open(db_name)
-        db.close()
 
     def open_db(self):
-        self.db = shelve.open()
+        self.db = shelve.open(self.db_name)
+
+    def close_db(self):
+        self.db.close()
 
     def create_key(self, key):
-        db = shelve.open(self.db_name)
-        if key not in db:
-            db[key] = []
-            db.close()
+        if key not in self.db:
+            self.db[key] = []
         else:
-            db.close()
             raise KeyDoesNotExistError("The key '{0}' already exists".format(key))
-
+    
+    def delete_key(self, key):
+        if key in self.db:
+            del self.db[key]
+        else:
+            raise KeyDoesNotExistError("The key '{0}' does not exist".format(key))
+    
+    def get_keys(self):
+        return self.db.keys()
 
     def add(self, key, item):
-        db = shelve.open(self.db_name)
-        if key not in db:
-            db[key] = []
-        object_list = db[key]
+        object_list = self.db[key]
         object_list.append(item)
-        object_list[len(object_list) - 1]["{0}_id".format(key)] = uuid.uuid1()
-        db[key] = object_list
-        db.close()
+        object_list[len(object_list) - 1]["uuid"] = uuid.uuid1()
+        self.db[key] = object_list
+
+    # def delete(self, key, index):
+    #     object_list = self.db[key]
     
     def get(self, key):
-        db = shelve.open(self.db_name)
-        if key in db:
-            values = db[key]
-            db.close()
+        if key in self.db:
+            values = self.db[key]
             return values
         else:
-            db.close()
             raise KeyDoesNotExistError("The key '{0}' does not exist".format(key))
