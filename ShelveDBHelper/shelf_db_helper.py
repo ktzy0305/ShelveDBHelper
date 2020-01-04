@@ -34,8 +34,15 @@ class DBHelper:
         object_list[len(object_list) - 1]["uuid"] = uuid.uuid1()
         self.db[key] = object_list
 
-    def delete(self, key, uuid):
-        object_list = self.db[key]
+    def delete(self, key, **kwargs):
+        if key in self.db:
+            values = self.db[key]
+            values_to_delete = self.find(key, **kwargs)
+            for value in values_to_delete:
+                values.remove(value)
+            self.db[key] = values
+        else:
+            raise KeyDoesNotExistError("The key '{0}' does not exist".format(key))
 
     def find(self, key, **kwargs):
         if key in self.db:
@@ -68,8 +75,21 @@ class DBHelper:
         else:
             raise KeyDoesNotExistError("The key '{0}' does not exist".format(key))
 
-    def update(self, key):
-        # Need a parameter for search condition
-        # Need another parameter to set new values
-        return
-
+    def update(self, key, values_to_update, **kwargs):
+        if key in self.db:
+            values = self.db[key]
+            values_count = len(list(map(lambda x: x, values)))
+            if values_count > 0:
+                kwargs_keys = list(map(lambda x : x, kwargs))
+                value_keys = list(map(lambda x : x, values[0]))
+                if set(kwargs_keys).issubset(set(value_keys)):
+                    for value in values_to_update:
+                        for kwargs_key in kwargs_keys:
+                            values[values.index(value)][kwargs_key] = kwargs[kwargs_key]
+                    self.db[key] = values
+                else:
+                    print("The following arguments '{0}' do not exist in the key '{1}'.".format(set(kwargs_keys) - set(value_keys), key))
+            else:
+                print("There is no data in the key '{0}' to be updated.".format(key))
+        else:
+            raise KeyDoesNotExistError("The key '{0}' does not exist".format(key))
